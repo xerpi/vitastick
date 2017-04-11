@@ -2,7 +2,13 @@ vitastick:
   attributes: 0
   version:
     major: 1
-    minor: 1
+    minor: 0
   main:
     start: module_start
     stop: module_stop
+  modules:
+    VitaStickForUser:
+      syscall: true
+      functions:
+        - vitastick_start
+        - vitastick_stop

@@ -7,6 +7,7 @@
 #include <psp2/touch.h>
 #include <psp2/motion.h>
 #include <taihen.h>
+#include "vitastick_uapi.h"
 #include "usb_descriptors.h"
 #include "log.h"
 
@@ -30,6 +31,8 @@ struct gamepad_report_t {
 
 static SceUID usb_thread_id;
 static SceUID usb_event_flag_id;
+static int vitastick_driver_registered = 0;
+static int vitastick_driver_activated = 0;
 
 static int send_hid_report_desc(void)
 {
@@ -47,7 +50,7 @@ static int send_hid_report_desc(void)
 		.physicalAddress = NULL
 	};
 
-	return TEST_CALL(ksceUdcdReqSend, &req);
+	return ksceUdcdReqSend(&req);
 }
 
 static int send_string_descriptor(int index)
@@ -66,7 +69,7 @@ static int send_string_descriptor(int index)
 		.physicalAddress = NULL
 	};
 
-	return TEST_CALL(ksceUdcdReqSend, &req);
+	return ksceUdcdReqSend(&req);
 }
 
 static void hid_report_init_on_complete(SceUdcdDeviceRequest *req)
@@ -175,7 +178,7 @@ static int send_hid_report(uint8_t report_id)
 		.physicalAddress = NULL
 	};
 
-	return TEST_CALL(ksceUdcdReqSend, &req);
+	return ksceUdcdReqSend(&req);
 }
 
 static int vitastick_udcd_process_request(int recipient, int arg, SceUdcdEP0DeviceRequest *req)
@@ -368,6 +371,92 @@ static int usb_thread(SceSize args, void *argp)
 	return 0;
 }
 
+
+/*
+ * Exports to userspace
+ */
+int vitastick_start(void)
+{
+	unsigned long state;
+	int ret;
+
+	ENTER_SYSCALL(state);
+
+	LOG("vitastick_start\n");
+
+	if (!vitastick_driver_registered) {
+		ret =  VITASTICK_ERROR_DRIVER_NOT_REGISTERED;
+		goto err;
+	} else if (vitastick_driver_activated) {
+		ret = VITASTICK_ERROR_DRIVER_ALREADY_ACTIVATED;
+		goto err;
+	}
+
+	ret = ksceUdcdDeactivate();
+	if (ret < 0 && ret != SCE_UDCD_ERROR_INVALID_ARGUMENT) {
+		LOG("Error deactivating UDCD (0x%08X)\n", ret);
+		goto err;
+	}
+
+	ksceUdcdStop("USB_MTP_Driver", 0, NULL);
+	ksceUdcdStop("USBPSPCommunicationDriver", 0, NULL);
+	ksceUdcdStop("USBSerDriver", 0, NULL);
+	ksceUdcdStop("USBDeviceControllerDriver", 0, NULL);
+
+	ret = ksceUdcdStart("USBDeviceControllerDriver", 0, NULL);
+	if (ret < 0) {
+		LOG("Error starting the USBDeviceControllerDriver driver (0x%08X)\n", ret);
+		goto err;
+	}
+
+	ret = ksceUdcdStart(VITASTICK_DRIVER_NAME, 0, NULL);
+	if (ret < 0) {
+		LOG("Error starting the " VITASTICK_DRIVER_NAME " driver (0x%08X)\n", ret);
+		ksceUdcdStop("USBDeviceControllerDriver", 0, NULL);
+		goto err;
+	}
+
+	ret = ksceUdcdActivate(VITASTICK_USB_PID);
+	if (ret < 0) {
+		LOG("Error activating the " VITASTICK_DRIVER_NAME " driver (0x%08X)\n", ret);
+		ksceUdcdStop(VITASTICK_DRIVER_NAME, 0, NULL);
+		ksceUdcdStop("USBDeviceControllerDriver", 0, NULL);
+		goto err;
+	}
+
+	vitastick_driver_activated = 1;
+
+	EXIT_SYSCALL(state);
+	return 0;
+
+err:
+	EXIT_SYSCALL(state);
+	return ret;
+}
+
+int vitastick_stop(void)
+{
+	unsigned long state;
+
+	ENTER_SYSCALL(state);
+
+	if (vitastick_driver_activated) {
+		EXIT_SYSCALL(state);
+		return VITASTICK_ERROR_DRIVER_NOT_ACTIVATED;
+	}
+
+	ksceUdcdDeactivate();
+	ksceUdcdStop(VITASTICK_DRIVER_NAME, 0, NULL);
+	ksceUdcdStop("USBDeviceControllerDriver", 0, NULL);
+	ksceUdcdStart("USB_MTP_Driver", 0, 0);
+	ksceUdcdActivate(0x4E4);
+
+	vitastick_driver_activated = 0;
+
+	EXIT_SYSCALL(state);
+	return 0;
+}
+
 void _start() __attribute__((weak, alias("module_start")));
 
 int module_start(SceSize argc, const void *args)
@@ -398,49 +487,18 @@ int module_start(SceSize argc, const void *args)
 		goto err_delete_event_flag;
 	}
 
-	ret = ksceUdcdDeactivate();
-	if (ret < 0 && ret != SCE_UDCD_ERROR_INVALID_ARGUMENT) {
-		LOG("Error deactivating UDCD (0x%08X)\n", ret);
-		goto err_unregister;
-	}
-
-	ksceUdcdStop("USB_MTP_Driver", 0, NULL);
-	ksceUdcdStop("USBPSPCommunicationDriver", 0, NULL);
-	ksceUdcdStop("USBSerDriver", 0, NULL);
-	ksceUdcdStop("USBDeviceControllerDriver", 0, NULL);
-
-	ret = ksceUdcdStart("USBDeviceControllerDriver", 0, NULL);
-	if (ret < 0) {
-		LOG("Error starting the USBDeviceControllerDriver driver (0x%08X)\n", ret);
-		goto err_unregister;
-	}
-
-	ret = ksceUdcdStart(VITASTICK_DRIVER_NAME, 0, NULL);
-	if (ret < 0) {
-		LOG("Error starting the " VITASTICK_DRIVER_NAME " driver (0x%08X)\n", ret);
-		goto err_unregister;
-	}
-
-	ret = ksceUdcdActivate(VITASTICK_USB_PID);
-	if (ret < 0) {
-		LOG("Error activating the " VITASTICK_DRIVER_NAME " driver (0x%08X)\n", ret);
-		goto err_stop;
-	}
-
 	ret = ksceKernelStartThread(usb_thread_id, 0, NULL);
 	if (ret < 0) {
 		LOG("Error starting the USB thread (0x%08X)\n", ret);
-		goto err_deactivate;
+		goto err_unregister;
 	}
+
+	vitastick_driver_registered = 1;
 
 	LOG("vitastick started successfully!\n");
 
 	return SCE_KERNEL_START_SUCCESS;
 
-err_deactivate:
-	ksceUdcdDeactivate();
-err_stop:
-	ksceUdcdStop(VITASTICK_DRIVER_NAME, 0, 0);
 err_unregister:
 	ksceUdcdUnregister(&vitastick_udcd_driver);
 err_delete_event_flag:
