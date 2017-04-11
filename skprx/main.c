@@ -7,7 +7,7 @@
 #include <psp2/touch.h>
 #include <psp2/motion.h>
 #include <taihen.h>
-#include "vitastick_uapi.h"
+#include "uapi/vitastick_uapi.h"
 #include "usb_descriptors.h"
 #include "log.h"
 
@@ -27,7 +27,7 @@ struct gamepad_report_t {
 #define EVF_DISCONNECTED	(1 << 1)
 #define EVF_EXIT		(1 << 2)
 #define EVF_INT_REQ_COMPLETED	(1 << 3)
-#define EVF_MASK		(EVF_INT_REQ_COMPLETED | (EVF_INT_REQ_COMPLETED - 1))
+#define EVF_ALL_MASK		(EVF_INT_REQ_COMPLETED | (EVF_INT_REQ_COMPLETED - 1))
 
 static SceUID usb_thread_id;
 static SceUID usb_event_flag_id;
@@ -104,7 +104,7 @@ static int send_hid_report_init(uint8_t report_id)
 		.physicalAddress = NULL
 	};
 
-	return TEST_CALL(ksceUdcdReqSend, &req);
+	return ksceUdcdReqSend(&req);
 }
 
 static void hid_report_on_complete(SceUdcdDeviceRequest *req)
@@ -178,7 +178,7 @@ static int send_hid_report(uint8_t report_id)
 		.physicalAddress = NULL
 	};
 
-	return ksceUdcdReqSend(&req);
+	return TEST_CALL(ksceUdcdReqSend, &req);
 }
 
 static int vitastick_udcd_process_request(int recipient, int arg, SceUdcdEP0DeviceRequest *req)
@@ -226,7 +226,6 @@ static int vitastick_udcd_process_request(int recipient, int arg, SceUdcdEP0Devi
 
 					switch (descriptor_type) {
 					case HID_DESCRIPTOR_REPORT:
-						//usb_connected = 1;
 						send_hid_report_desc();
 						break;
 					}
@@ -285,6 +284,8 @@ static int vitastick_udcd_change_setting(int interfaceNumber, int alternateSetti
 static int vitastick_udcd_attach(int usb_version)
 {
 	LOG("vitastick_udcd_attach %d\n", usb_version);
+
+	ksceUdcdClearFIFO(&endpoints[1]);
 
 	return 0;
 }
@@ -349,7 +350,7 @@ static int usb_thread(SceSize args, void *argp)
 		int ret;
 		unsigned int evf_out;
 
-		ret = ksceKernelWaitEventFlagCB(usb_event_flag_id, EVF_MASK,
+		ret = ksceKernelWaitEventFlagCB(usb_event_flag_id, EVF_ALL_MASK,
 			SCE_EVENT_WAITOR | SCE_EVENT_WAITCLEAR_PAT, &evf_out, NULL);
 		if (ret < 0)
 			break;
@@ -359,8 +360,8 @@ static int usb_thread(SceSize args, void *argp)
 		if (evf_out & EVF_EXIT) {
 			break;
 		} else if (evf_out & EVF_CONNECTED) {
-			connected = 1;
-			send_hid_report(1);
+			if (send_hid_report(1) >= 0)
+				connected = 1;
 		} else if (evf_out & EVF_DISCONNECTED) {
 			connected = 0;
 		} else if (evf_out & EVF_INT_REQ_COMPLETED && connected) {
@@ -371,7 +372,6 @@ static int usb_thread(SceSize args, void *argp)
 	return 0;
 }
 
-
 /*
  * Exports to userspace
  */
@@ -381,6 +381,8 @@ int vitastick_start(void)
 	int ret;
 
 	ENTER_SYSCALL(state);
+
+	log_reset();
 
 	LOG("vitastick_start\n");
 
@@ -416,6 +418,8 @@ int vitastick_start(void)
 		goto err;
 	}
 
+	ksceKernelClearEventFlag(usb_event_flag_id, ~EVF_ALL_MASK);
+
 	ret = ksceUdcdActivate(VITASTICK_USB_PID);
 	if (ret < 0) {
 		LOG("Error activating the " VITASTICK_DRIVER_NAME " driver (0x%08X)\n", ret);
@@ -440,18 +444,23 @@ int vitastick_stop(void)
 
 	ENTER_SYSCALL(state);
 
-	if (vitastick_driver_activated) {
+	if (!vitastick_driver_activated) {
 		EXIT_SYSCALL(state);
 		return VITASTICK_ERROR_DRIVER_NOT_ACTIVATED;
 	}
 
+	ksceKernelSetEventFlag(usb_event_flag_id, EVF_DISCONNECTED);
+
 	ksceUdcdDeactivate();
 	ksceUdcdStop(VITASTICK_DRIVER_NAME, 0, NULL);
 	ksceUdcdStop("USBDeviceControllerDriver", 0, NULL);
-	ksceUdcdStart("USB_MTP_Driver", 0, 0);
+	ksceUdcdStart("USBDeviceControllerDriver", 0, NULL);
+	ksceUdcdStart("USB_MTP_Driver", 0, NULL);
 	ksceUdcdActivate(0x4E4);
 
 	vitastick_driver_activated = 0;
+
+	log_flush();
 
 	EXIT_SYSCALL(state);
 	return 0;
@@ -493,6 +502,7 @@ int module_start(SceSize argc, const void *args)
 		goto err_unregister;
 	}
 
+	vitastick_driver_activated = 0;
 	vitastick_driver_registered = 1;
 
 	LOG("vitastick started successfully!\n");
