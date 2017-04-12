@@ -15,7 +15,10 @@ void log_flush();
 #  define LOG(...) \
 	do { \
 		char buffer[256]; \
+		char time_buf[32]; \
+		snprintf(time_buf, sizeof(time_buf), "[%lld.%lld] ", ksceKernelGetSystemTimeWide() / 1000000, (ksceKernelGetSystemTimeWide() % 1000000) / 1000); \
 		snprintf(buffer, sizeof(buffer), ##__VA_ARGS__); \
+		log_write(time_buf, strlen(time_buf)); \
 		log_write(buffer, strlen(buffer)); \
 	} while (0)
 #else

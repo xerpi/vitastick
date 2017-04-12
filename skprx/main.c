@@ -11,6 +11,13 @@
 #include "usb_descriptors.h"
 #include "log.h"
 
+#ifndef RELEASE
+#undef ENTER_SYSCALL
+#undef EXIT_SYSCALL
+#define ENTER_SYSCALL(x) (void)(x)
+#define EXIT_SYSCALL(x) (void)(x)
+#endif
+
 #define VITASTICK_DRIVER_NAME	"VITASTICK"
 #define VITASTICK_USB_PID	0x1337
 
@@ -76,7 +83,7 @@ static void hid_report_init_on_complete(SceUdcdDeviceRequest *req)
 {
 	LOG("hid_report_init_on_complete\n");
 
-	ksceKernelSetEventFlag(usb_event_flag_id, EVF_CONNECTED);
+
 }
 
 static int send_hid_report_init(uint8_t report_id)
@@ -227,6 +234,7 @@ static int vitastick_udcd_process_request(int recipient, int arg, SceUdcdEP0Devi
 					switch (descriptor_type) {
 					case HID_DESCRIPTOR_REPORT:
 						send_hid_report_desc();
+						ksceKernelSetEventFlag(usb_event_flag_id, EVF_CONNECTED);
 						break;
 					}
 				}
@@ -382,8 +390,6 @@ int vitastick_start(void)
 
 	ENTER_SYSCALL(state);
 
-	log_reset();
-
 	LOG("vitastick_start\n");
 
 	if (!vitastick_driver_registered) {
@@ -460,8 +466,6 @@ int vitastick_stop(void)
 
 	vitastick_driver_activated = 0;
 
-	log_flush();
-
 	EXIT_SYSCALL(state);
 	return 0;
 }
@@ -505,6 +509,10 @@ int module_start(SceSize argc, const void *args)
 	vitastick_driver_activated = 0;
 	vitastick_driver_registered = 1;
 
+#ifndef RELEASE
+	LOG("vitastic_start(): 0x%08X\n", vitastick_start());
+#endif
+
 	LOG("vitastick started successfully!\n");
 
 	return SCE_KERNEL_START_SUCCESS;
@@ -521,6 +529,10 @@ err_return:
 
 int module_stop(SceSize argc, const void *args)
 {
+#ifndef RELEASE
+	LOG("vitastick_stop(): 0x%08X\n", vitastick_stop());
+#endif
+
 	ksceKernelSetEventFlag(usb_event_flag_id, EVF_EXIT);
 
 	ksceKernelWaitThreadEnd(usb_thread_id, NULL, NULL);

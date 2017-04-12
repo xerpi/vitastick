@@ -6,9 +6,3 @@ vitastick:
   main:
     start: module_start
     stop: module_stop
-  modules:
-    VitaStickForUser:
-      syscall: true
-      functions:
-        - vitastick_start
-        - vitastick_stop
