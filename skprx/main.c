@@ -220,7 +220,6 @@ static int vitastick_udcd_process_request(int recipient, int arg, SceUdcdEP0Devi
 					switch (descriptor_type) {
 					case HID_DESCRIPTOR_REPORT:
 						send_hid_report_desc();
-						ksceKernelSetEventFlag(usb_event_flag_id, EVF_CONNECTED);
 						break;
 					}
 				}
@@ -279,7 +278,10 @@ static int vitastick_udcd_attach(int usb_version)
 {
 	LOG("vitastick_udcd_attach %d\n", usb_version);
 
+	ksceUdcdReqCancelAll(&endpoints[1]);
 	ksceUdcdClearFIFO(&endpoints[1]);
+
+	ksceKernelSetEventFlag(usb_event_flag_id, EVF_CONNECTED);
 
 	return 0;
 }
