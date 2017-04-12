@@ -72,13 +72,6 @@ static int send_string_descriptor(int index)
 	return ksceUdcdReqSend(&req);
 }
 
-static void hid_report_init_on_complete(SceUdcdDeviceRequest *req)
-{
-	LOG("hid_report_init_on_complete\n");
-
-	ksceKernelSetEventFlag(usb_event_flag_id, EVF_CONNECTED);
-}
-
 static int send_hid_report_init(uint8_t report_id)
 {
 	static struct gamepad_report_t gamepad __attribute__((aligned(64))) = {
@@ -96,7 +89,7 @@ static int send_hid_report_init(uint8_t report_id)
 		.unk = 0,
 		.size = sizeof(gamepad),
 		.isControlRequest = 0,
-		.onComplete = hid_report_init_on_complete,
+		.onComplete = NULL,
 		.transmitted = 0,
 		.returnCode = 0,
 		.next = NULL,
@@ -227,6 +220,7 @@ static int vitastick_udcd_process_request(int recipient, int arg, SceUdcdEP0Devi
 					switch (descriptor_type) {
 					case HID_DESCRIPTOR_REPORT:
 						send_hid_report_desc();
+						ksceKernelSetEventFlag(usb_event_flag_id, EVF_CONNECTED);
 						break;
 					}
 				}
