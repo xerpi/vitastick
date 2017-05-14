@@ -112,11 +112,11 @@ static void fill_gamepad_report(const SceCtrlData *pad, struct gamepad_report_t 
 	gamepad->report_id = 1;
 	gamepad->buttons = 0;
 
-	if (pad->buttons & SCE_CTRL_CROSS)
-		gamepad->buttons |= 1 << 0;
-	if (pad->buttons & SCE_CTRL_CIRCLE)
-		gamepad->buttons |= 1 << 1;
 	if (pad->buttons & SCE_CTRL_SQUARE)
+		gamepad->buttons |= 1 << 0;
+	if (pad->buttons & SCE_CTRL_CROSS)
+		gamepad->buttons |= 1 << 1;
+	if (pad->buttons & SCE_CTRL_CIRCLE)
 		gamepad->buttons |= 1 << 2;
 	if (pad->buttons & SCE_CTRL_TRIANGLE)
 		gamepad->buttons |= 1 << 3;
@@ -126,19 +126,29 @@ static void fill_gamepad_report(const SceCtrlData *pad, struct gamepad_report_t 
 	if (pad->buttons & SCE_CTRL_RTRIGGER)
 		gamepad->buttons |= 1 << 5;
 
-	if (pad->buttons & SCE_CTRL_SELECT)
+	if (pad->buttons & SCE_CTRL_L1)
 		gamepad->buttons |= 1 << 6;
-	if (pad->buttons & SCE_CTRL_START)
+	if (pad->buttons & SCE_CTRL_R1)
 		gamepad->buttons |= 1 << 7;
 
-	if (pad->buttons & SCE_CTRL_UP)
+	if (pad->buttons & SCE_CTRL_SELECT)
 		gamepad->buttons |= 1 << 8;
-	if (pad->buttons & SCE_CTRL_DOWN)
+	if (pad->buttons & SCE_CTRL_START)
 		gamepad->buttons |= 1 << 9;
-	if (pad->buttons & SCE_CTRL_RIGHT)
+
+	if (pad->buttons & SCE_CTRL_L3)
 		gamepad->buttons |= 1 << 10;
-	if (pad->buttons & SCE_CTRL_LEFT)
+	if (pad->buttons & SCE_CTRL_R3)
 		gamepad->buttons |= 1 << 11;
+
+	if (pad->buttons & SCE_CTRL_UP)
+		gamepad->buttons |= 1 << 12;
+	if (pad->buttons & SCE_CTRL_DOWN)
+		gamepad->buttons |= 1 << 13;
+	if (pad->buttons & SCE_CTRL_RIGHT)
+		gamepad->buttons |= 1 << 14;
+	if (pad->buttons & SCE_CTRL_LEFT)
+		gamepad->buttons |= 1 << 15;
 
 	gamepad->left_x = (int8_t)pad->lx - 128;
 	gamepad->left_y = (int8_t)pad->ly - 128;
