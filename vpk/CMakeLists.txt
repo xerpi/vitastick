@@ -1,15 +1,26 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_SYSTEM_NAME "Generic")
-set(CMAKE_C_COMPILER "arm-vita-eabi-gcc")
-set(CMAKE_CXX_COMPILER "arm-vita-eabi-g++")
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+	if(DEFINED ENV{VITASDK})
+		set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
+	else()
+		message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
+	endif()
+endif()
 
-project(vitatsick)
-set(TITLE_ID "VITASTICK")
-set(TITLE_NAME "Vitastick")
+set(SHORT_NAME vitastick)
+project(${SHORT_NAME})
+include("${VITASDK}/share/vita.cmake" REQUIRED)
 
-set(CMAKE_C_FLAGS "-Wl,-q -Wall -O2 -std=gnu99")
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -fno-rtti -fno-exceptions")
+set(VITA_APP_NAME "Vitastick")
+set(VITA_TITLEID  "VITASTICK")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+if (NOT ${RELEASE})
+	add_definitions(-DENABLE_LOGGING)
+endif()
 
 include_directories(
 	${PROJECT_SOURCE_DIR}/../skprx/uapi
@@ -20,45 +31,31 @@ link_directories(
 	${PROJECT_SOURCE_DIR}/../skprx/build/stubs
 )
 
-if (NOT ${RELEASE})
-	add_definitions(-DENABLE_LOGGING)
-endif()
-
-add_executable(${PROJECT_NAME}.elf
+add_executable(${SHORT_NAME}
 	main.c
 	debugScreenFont.c
 )
 
-target_link_libraries(${PROJECT_NAME}.elf
+target_link_libraries(${SHORT_NAME}
+	vitastick_stub
 	SceDisplay_stub
 	SceCtrl_stub
 	ScePower_stub
-	vitastick_stub
 )
 
-add_custom_target(${PROJECT_NAME}.velf ALL
-	COMMAND vita-elf-create ${PROJECT_NAME}.elf ${PROJECT_NAME}.velf
-)
+vita_create_self(${SHORT_NAME}.self ${SHORT_NAME})
 
-add_custom_target(eboot.bin ALL
-	COMMAND vita-make-fself ${PROJECT_NAME}.velf eboot.bin
-)
-
-add_custom_target(${PROJECT_NAME}.vpk ALL
-	COMMAND vita-mksfoex -s TITLE_ID=${TITLE_ID} "${TITLE_NAME}" param.sfo
-	COMMAND vita-pack-vpk -s param.sfo -b eboot.bin ${PROJECT_NAME}.vpk
+vita_create_vpk(${SHORT_NAME}.vpk ${VITA_TITLEID} ${SHORT_NAME}.self
+	VERSION ${VITA_VERSION}
+	NAME ${VITA_APP_NAME}
 )
 
 add_custom_target(vpksend
-	COMMAND curl -T ${PROJECT_NAME}.vpk ftp://$(PSVITAIP):1337/ux0:/
-	DEPENDS ${PROJECT_NAME}.vpk
+	COMMAND curl -T ${SHORT_NAME}.vpk ftp://$(PSVITAIP):1337/ux0:/
+	DEPENDS ${SHORT_NAME}.vpk
 )
 
 add_custom_target(send
-	COMMAND curl -T eboot.bin ftp://$(PSVITAIP):1337/ux0:/app/${TITLE_ID}/
-	DEPENDS eboot.bin
+	COMMAND curl -T ${SHORT_NAME}.self ftp://$(PSVITAIP):1337/ux0:/app/${VITA_TITLEID}/eboot.bin
+	DEPENDS ${SHORT_NAME}.self
 )
-
-add_dependencies(${PROJECT_NAME}.velf ${PROJECT_NAME}.elf)
-add_dependencies(eboot.bin ${PROJECT_NAME}.velf)
-add_dependencies(${PROJECT_NAME}.vpk eboot.bin)

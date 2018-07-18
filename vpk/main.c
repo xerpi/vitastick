@@ -11,6 +11,7 @@ static void wait_key_press();
 int main(int argc, char *argv[])
 {
 	int ret;
+
 	psvDebugScreenInit();
 
 	printf("vitastick by xerpi\n");
@@ -18,7 +19,7 @@ int main(int argc, char *argv[])
 	ret = vitastick_start();
 	if (ret < 0) {
 		printf("Error vitastick_start(): 0x%08X\n", ret);
-		wait_key_press("any key", 0);
+		wait_key_press("X", SCE_CTRL_CROSS);
 		return -1;
 	}
 

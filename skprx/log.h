@@ -7,19 +7,22 @@
 #define LOG_PATH "ux0:dump/"
 #define LOG_FILE LOG_PATH "vitastick.txt"
 
+#ifndef RELEASE
+
 void log_reset();
 void log_write(const char *buffer, size_t length);
 void log_flush();
 
-#ifndef RELEASE
-#  define LOG(...) \
+#define LOG(...) \
 	do { \
 		char buffer[256]; \
 		snprintf(buffer, sizeof(buffer), ##__VA_ARGS__); \
 		log_write(buffer, strlen(buffer)); \
 	} while (0)
 #else
-#  define LOG(...) (void)0
+
+#define LOG(...) (void)0
+
 #endif
 
 #define TEST_CALL(f, ...) ({ \

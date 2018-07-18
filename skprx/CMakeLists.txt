@@ -32,7 +32,6 @@ target_link_libraries(${PROJECT_NAME}
 	SceCpuForDriver_stub
 	SceCtrlForDriver_stub
 	SceUdcdForDriver_stub
-	SceIofilemgrForDriver_stub
 )
 
 vita_create_self(${PROJECT_NAME}.skprx ${PROJECT_NAME} CONFIG ${PROJECT_NAME}.yml UNSAFE)
@@ -40,6 +39,6 @@ vita_create_self(${PROJECT_NAME}.skprx ${PROJECT_NAME} CONFIG ${PROJECT_NAME}.ym
 vita_create_stubs(stubs ${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}.yml KERNEL)
 
 add_custom_target(send
-	COMMAND curl -T ${PROJECT_NAME}.skprx ftp://$(PSVITAIP):1337/ux0:/data/tai/kplugin.skprx
+	COMMAND curl -T ${PROJECT_NAME}.skprx ftp://$(PSVITAIP):1337/ux0:/tai/
 	DEPENDS ${PROJECT_NAME}.skprx
 )

@@ -184,7 +184,7 @@ static int send_hid_report(uint8_t report_id)
 	return TEST_CALL(ksceUdcdReqSend, &req);
 }
 
-static int vitastick_udcd_process_request(int recipient, int arg, SceUdcdEP0DeviceRequest *req)
+static int vitastick_udcd_process_request(int recipient, int arg, SceUdcdEP0DeviceRequest *req, void *user_data)
 {
 	LOG("usb_driver_process_request\n");
 
@@ -277,14 +277,14 @@ static int vitastick_udcd_process_request(int recipient, int arg, SceUdcdEP0Devi
 	return 0;
 }
 
-static int vitastick_udcd_change_setting(int interfaceNumber, int alternateSetting)
+static int vitastick_udcd_change_setting(int interfaceNumber, int alternateSetting, int bus)
 {
 	LOG("vitastick_udcd_change %d %d\n", interfaceNumber, alternateSetting);
 
 	return 0;
 }
 
-static int vitastick_udcd_attach(int usb_version)
+static int vitastick_udcd_attach(int usb_version, void *user_data)
 {
 	LOG("vitastick_udcd_attach %d\n", usb_version);
 
@@ -296,26 +296,26 @@ static int vitastick_udcd_attach(int usb_version)
 	return 0;
 }
 
-static void vitastick_udcd_detach(void)
+static void vitastick_udcd_detach(void *user_data)
 {
 	LOG("vitastick_udcd_detach\n");
 
 	ksceKernelSetEventFlag(usb_event_flag_id, EVF_DISCONNECTED);
 }
 
-static void vitastick_udcd_configure(int usb_version, int desc_count, SceUdcdInterfaceSettings *settings)
+static void vitastick_udcd_configure(int usb_version, int desc_count, SceUdcdInterfaceSettings *settings, void *user_data)
 {
 	LOG("vitastick_udcd_configure %d %d %p %d\n", usb_version, desc_count, settings, settings->numDescriptors);
 }
 
-static int vitastick_driver_start(int size, void *p)
+static int vitastick_driver_start(int size, void *args, void *user_data)
 {
 	LOG("vitastick_driver_start\n");
 
 	return 0;
 }
 
-static int vitastick_driver_stop(int size, void *p)
+static int vitastick_driver_stop(int size, void *args, void *user_data)
 {
 	LOG("vitastick_driver_stop\n");
 
