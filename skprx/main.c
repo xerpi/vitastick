@@ -158,7 +158,7 @@ static void fill_gamepad_report(const SceCtrlData *pad, struct gamepad_report_t 
 
 static int send_hid_report(uint8_t report_id)
 {
-	static struct gamepad_report_t gamepad __attribute__((aligned(64))) = { 0 } ;
+	static struct gamepad_report_t gamepad __attribute__((aligned(64))) = { 0 };
 	SceCtrlData pad;
 
 	ksceCtrlPeekBufferPositive(0, &pad, 1);
@@ -393,7 +393,7 @@ int vitastick_start(void)
 	LOG("vitastick_start\n");
 
 	if (!vitastick_driver_registered) {
-		ret =  VITASTICK_ERROR_DRIVER_NOT_REGISTERED;
+		ret = VITASTICK_ERROR_DRIVER_NOT_REGISTERED;
 		goto err;
 	} else if (vitastick_driver_activated) {
 		ret = VITASTICK_ERROR_DRIVER_ALREADY_ACTIVATED;
@@ -489,8 +489,8 @@ int module_start(SceSize argc, const void *args)
 		goto err_return;
 	}
 
-	usb_event_flag_id =  ksceKernelCreateEventFlag("vitastick_event_flag", 0,
-						       0, NULL);
+	usb_event_flag_id = ksceKernelCreateEventFlag("vitastick_event_flag", 0,
+						      0, NULL);
 	if (usb_event_flag_id < 0) {
 		LOG("Error creating the USB event flag (0x%08X)\n", usb_event_flag_id);
 		goto err_destroy_thread;

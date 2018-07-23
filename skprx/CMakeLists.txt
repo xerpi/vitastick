@@ -32,6 +32,7 @@ target_link_libraries(${PROJECT_NAME}
 	SceCpuForDriver_stub
 	SceCtrlForDriver_stub
 	SceUdcdForDriver_stub
+	SceIofilemgrForDriver_stub
 )
 
 vita_create_self(${PROJECT_NAME}.skprx ${PROJECT_NAME} CONFIG ${PROJECT_NAME}.yml UNSAFE)

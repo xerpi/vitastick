@@ -17,7 +17,11 @@ int main(int argc, char *argv[])
 	printf("vitastick by xerpi\n");
 
 	ret = vitastick_start();
-	if (ret < 0) {
+	if (ret >= 0) {
+		printf("vitastick started successfully!\n");
+	} else if (ret == VITASTICK_ERROR_DRIVER_ALREADY_ACTIVATED) {
+		printf("vitastick is already active!\n");
+	} else if (ret < 0) {
 		printf("Error vitastick_start(): 0x%08X\n", ret);
 		wait_key_press("X", SCE_CTRL_CROSS);
 		return -1;
@@ -27,8 +31,6 @@ int main(int argc, char *argv[])
 	scePowerSetBusClockFrequency(111);
 	scePowerSetGpuClockFrequency(111);
 	scePowerSetGpuXbarClockFrequency(111);
-
-	printf("vitastick started successfully!\n");
 
 	wait_key_press("START + SELECT", SCE_CTRL_START | SCE_CTRL_SELECT);
 
