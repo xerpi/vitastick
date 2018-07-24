@@ -388,8 +388,10 @@ int vitastick_start(void)
 
 	ENTER_SYSCALL(state);
 
+	#ifndef RELEASE
 	log_reset();
-
+	#endif
+	
 	LOG("vitastick_start\n");
 
 	if (!vitastick_driver_registered) {
@@ -466,7 +468,9 @@ int vitastick_stop(void)
 
 	vitastick_driver_activated = 0;
 
+	#ifndef RELEASE
 	log_flush();
+	#endif
 
 	EXIT_SYSCALL(state);
 	return 0;
@@ -478,7 +482,9 @@ int module_start(SceSize argc, const void *args)
 {
 	int ret;
 
+	#ifndef RELEASE
 	log_reset();
+	#endif
 
 	LOG("vitastick by xerpi\n");
 
@@ -539,7 +545,9 @@ int module_stop(SceSize argc, const void *args)
 	ksceUdcdStop("USBDeviceControllerDriver", 0, NULL);
 	ksceUdcdUnregister(&vitastick_udcd_driver);
 
+	#ifndef RELEASE
 	log_flush();
+	#endif
 
 	return SCE_KERNEL_STOP_SUCCESS;
 }
