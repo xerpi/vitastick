@@ -21,6 +21,10 @@ void log_flush();
 	} while (0)
 #else
 
+static inline void log_reset() {}
+static inline void log_write(const char *buffer, size_t length) {}
+static inline void log_flush() {}
+
 #define LOG(...) (void)0
 
 #endif
