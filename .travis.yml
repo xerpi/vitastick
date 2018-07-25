@@ -7,11 +7,11 @@ git:
 
 script:
   - sudo apt-get update
-  - sudo apt-get --assume-yes install make git-core cmake
+  - sudo apt-get --assume-yes install make cmake libc6-i386 lib32stdc++6 lib32gcc1 patch
   - export VITASDK=/usr/local/vitasdk && export PATH=$VITASDK/bin:$PATH
   - git clone https://github.com/vitasdk/vdpm
   - cd vdpm
-  - ./bootstrap-vitasdk.sh
+  - sudo ./bootstrap-vitasdk.sh
   - sudo ./install-all.sh
   - vitasdk-update
   - cd ..
