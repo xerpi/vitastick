@@ -14,9 +14,11 @@ include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "Vitastick")
 set(VITA_TITLEID  "VITASTICK")
+set(VITA_VERSION "01.04")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d PARENTAL_LEVEL=1")
 
 if (NOT ${RELEASE})
 	add_definitions(-DENABLE_LOGGING)
@@ -48,6 +50,10 @@ vita_create_self(${SHORT_NAME}.self ${SHORT_NAME})
 vita_create_vpk(${SHORT_NAME}.vpk ${VITA_TITLEID} ${SHORT_NAME}.self
 	VERSION ${VITA_VERSION}
 	NAME ${VITA_APP_NAME}
+   FILE pkg/sce_sys/icon0.png sce_sys/icon0.png
+   pkg/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
+   pkg/sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
+   pkg/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
 )
 
 add_custom_target(vpksend
