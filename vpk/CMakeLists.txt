@@ -50,10 +50,10 @@ vita_create_self(${SHORT_NAME}.self ${SHORT_NAME})
 vita_create_vpk(${SHORT_NAME}.vpk ${VITA_TITLEID} ${SHORT_NAME}.self
 	VERSION ${VITA_VERSION}
 	NAME ${VITA_APP_NAME}
-   FILE pkg/sce_sys/icon0.png sce_sys/icon0.png
-   pkg/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
-   pkg/sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
-   pkg/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
+	FILE	pkg/sce_sys/icon0.png sce_sys/icon0.png
+		pkg/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
+		pkg/sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
+		pkg/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
 )
 
 add_custom_target(vpksend
