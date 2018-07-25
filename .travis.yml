@@ -1,0 +1,23 @@
+language: bash
+sudo: enabled
+dist: trusty
+
+git:
+  depth: 1
+
+script:
+  - sudo apt-get update
+  - sudo apt-get --assume-yes install make cmake libc6-i386 lib32stdc++6 lib32gcc1 patch
+  - export VITASDK=/usr/local/vitasdk && export PATH=$VITASDK/bin:$PATH
+  - git clone https://github.com/vitasdk/vdpm
+  - cd vdpm
+  - sudo ./bootstrap-vitasdk.sh > /dev/null 2>&1
+  - sudo ./install-all.sh > /dev/null 2>&1
+  - cd ..
+  - mkdir -p skprx/build && mkdir -p vpk/build
+  - cd skprx/build && cmake ..
+  - make
+  - cd ../../
+  - cd vpk/build && cmake ..
+  - make
+  - echo "If everything was successful, congrats!"
