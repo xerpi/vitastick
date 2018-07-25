@@ -11,9 +11,9 @@ script:
   - export VITASDK=/usr/local/vitasdk && export PATH=$VITASDK/bin:$PATH
   - git clone https://github.com/vitasdk/vdpm
   - cd vdpm
-  - sudo ./bootstrap-vitasdk.sh
-  - sudo ./install-all.sh
-  - vitasdk-update
+  - sudo ./bootstrap-vitasdk.sh > /dev/null 2>&1
+  - sudo ./install-all.sh > /dev/null 2>&1
+  - sudo vitasdk-update > /dev/null 2>&1
   - cd ..
   - mkdir -p skprx/build && mkdir -p vpk/build
   - cd skprx/build && cmake ..
@@ -21,3 +21,4 @@ script:
   - cd ../../
   - cd vpk/build && cmake ..
   - make
+  - echo "If everything was successful, congrats!"
