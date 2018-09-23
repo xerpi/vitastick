@@ -10,10 +10,10 @@ It uses the UDCD (USB Device Controller Driver) infrastructure in the kernel to 
 
 **Installation:**
 
-1. Add vitastick.skprx to taiHEN's config (ux0:/tai/config.txt):
+1. Add vitastick.skprx to taiHEN's config (ur0:/tai/config.txt):
 	```
 	*KERNEL
-	ux0:tai/vitastick.skprx
+	ur0:tai/vitastick.skprx
 	```
 2. Install vitastick.vpk
 
