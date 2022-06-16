@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <psp2/ctrl.h>
 #include <psp2/power.h>
+#include <psp2/touch.h>
 #include "vitastick_uapi.h"
 #include "debugScreen.h"
 
@@ -49,8 +50,35 @@ void wait_key_press(const char *key_desc, unsigned int key_mask)
 	SceCtrlData pad;
 
 	printf("Press %s to exit.\n", key_desc);
+	sceTouchSetSamplingState(SCE_TOUCH_PORT_FRONT, 1);
+	sceTouchSetSamplingState(SCE_TOUCH_PORT_BACK, 1);
+	sceTouchEnableTouchForce(SCE_TOUCH_PORT_FRONT);
+	sceTouchEnableTouchForce(SCE_TOUCH_PORT_BACK);
+
+	SceTouchData touch_old[SCE_TOUCH_PORT_MAX_NUM];
+	SceTouchData touch[SCE_TOUCH_PORT_MAX_NUM];
 
 	while (1) {
+		memcpy(touch_old, touch, sizeof(touch_old));
+		int i;
+		uint8_t triggers = 0;
+
+		/* sample both back and front surfaces */
+		sceTouchPeek(SCE_TOUCH_PORT_BACK, &touch[SCE_TOUCH_PORT_BACK], 1);
+
+		/* print every touch coordinates on that surface */
+		for (i = 0; i < touch[SCE_TOUCH_PORT_BACK].reportNum; i++) {
+			if (touch[SCE_TOUCH_PORT_BACK].report[i].x < 800 && touch[SCE_TOUCH_PORT_BACK].report[i].y > 400)
+				triggers |= (1 << 0);
+			if (touch[SCE_TOUCH_PORT_BACK].report[i].x > 800 && touch[SCE_TOUCH_PORT_BACK].report[i].y > 400)
+				triggers |= (1 << 1);
+			if (touch[SCE_TOUCH_PORT_BACK].report[i].x > 800 && touch[SCE_TOUCH_PORT_BACK].report[i].y < 400)
+				triggers |= (1 << 2);
+			if (touch[SCE_TOUCH_PORT_BACK].report[i].x < 800 && touch[SCE_TOUCH_PORT_BACK].report[i].y < 400)
+				triggers |= (1 << 3);
+		}
+
+		upload_trigger_state(triggers);
 		sceCtrlReadBufferPositive(0, &pad, 1);
 		if ((pad.buttons & key_mask) == key_mask)
 			break;

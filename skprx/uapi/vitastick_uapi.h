@@ -11,6 +11,7 @@ extern "C" {
 
 int vitastick_start(void);
 int vitastick_stop(void);
+int upload_trigger_state(uint8_t triggers);
 
 #ifdef __cplusplus
 }

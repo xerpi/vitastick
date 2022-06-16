@@ -12,3 +12,4 @@ vitastick:
       functions:
         - vitastick_start
         - vitastick_stop
+        - upload_trigger_state
