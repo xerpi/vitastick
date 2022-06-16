@@ -16,7 +16,7 @@
 
 struct gamepad_report_t {
 	uint8_t report_id;
-	uint16_t buttons;
+	uint32_t buttons;
 	int8_t left_x;
 	int8_t left_y;
 	int8_t right_x;
@@ -33,6 +33,7 @@ static SceUID usb_thread_id;
 static SceUID usb_event_flag_id;
 static int vitastick_driver_registered = 0;
 static int vitastick_driver_activated = 0;
+uint8_t l2, r2, l3, r3;
 
 static int send_hid_report_desc(void)
 {
@@ -133,10 +134,10 @@ static void fill_gamepad_report(const SceCtrlData *pad, struct gamepad_report_t 
 	if (pad->buttons & SCE_CTRL_START)
 		gamepad->buttons |= 1 << 9;
 
-	if (pad->buttons & SCE_CTRL_L3)
-		gamepad->buttons |= 1 << 10;
-	if (pad->buttons & SCE_CTRL_R3)
-		gamepad->buttons |= 1 << 11;
+	//if (pad->buttons & SCE_CTRL_L3)
+	//	gamepad->buttons |= 1 << 10;
+	//if (pad->buttons & SCE_CTRL_R3)
+	//	gamepad->buttons |= 1 << 11;
 
 	if (pad->buttons & SCE_CTRL_UP)
 		gamepad->buttons |= 1 << 12;
@@ -146,6 +147,14 @@ static void fill_gamepad_report(const SceCtrlData *pad, struct gamepad_report_t 
 		gamepad->buttons |= 1 << 14;
 	if (pad->buttons & SCE_CTRL_LEFT)
 		gamepad->buttons |= 1 << 15;
+	if (l2)
+		gamepad->buttons |= 1 << 16;
+	if (r2)
+		gamepad->buttons |= 1 << 17;
+	if (l3)
+		gamepad->buttons |= 1 << 10;
+	if (r3)
+		gamepad->buttons |= 1 << 11;
 
 	gamepad->left_x = (int8_t)pad->lx - 128;
 	gamepad->left_y = (int8_t)pad->ly - 128;
@@ -538,4 +547,20 @@ int module_stop(SceSize argc, const void *args)
 	log_flush();
 
 	return SCE_KERNEL_STOP_SUCCESS;
+}
+
+int upload_trigger_state(uint8_t triggers)
+{
+	unsigned long state;
+	int ret;
+
+	ENTER_SYSCALL(state);
+
+	l2 = triggers & (1 << 0);
+	r2 = triggers & (1 << 1);
+	l3 = triggers & (1 << 2);
+	r3 = triggers & (1 << 3);
+
+	EXIT_SYSCALL(state);
+	return 0;
 }
